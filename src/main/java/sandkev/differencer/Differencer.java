@@ -38,24 +38,19 @@ public abstract class Differencer<T extends NaturallyKeyed<N>, N extends Seriali
         while (actual!=null && expected!=null){
 
             int keyMatch = keyComparator.compare(actual.getKey(), expected.getKey());
-            switch (keyMatch){
-                case 0:
-                    int match = dataComparator.compare(actual, expected);
-                    if(match==0){
-                        handler.onMatch(actual, expected);
-                    }else {
-                        handler.onDifference(actual, expected);
-                    }
-                    expected = nextOrNull(expectedItor);
-                    break;
-                case 1:
-                    handler.onMissing(actual);
-                    expected = nextOrNull(expectedItor);
-                    break;
-                case -1:
-                    handler.onMissing(expected);
-                    actual = nextOrNull(actualItor);
-                    break;
+            if(keyMatch == 0){
+                //same
+                handler.onMatch(actual, expected);
+                actual = nextOrNull(actualItor);
+                expected = nextOrNull(expectedItor);
+            }else if( keyMatch > 0){
+                //actual is bigger
+                handler.onMissing(expected);
+                expected = nextOrNull(expectedItor);
+            }else {
+                //actual is smaller
+                handler.onAdded(actual);
+                actual = nextOrNull(actualItor);
             }
 
             /*
@@ -73,6 +68,12 @@ public abstract class Differencer<T extends NaturallyKeyed<N>, N extends Seriali
 
 
              */
+            if(expected==null && actual!=null){
+                handler.onAdded(actual);
+            }
+            if(actual==null && expected!=null){
+                handler.onMissing(expected);
+            }
 
 
 
