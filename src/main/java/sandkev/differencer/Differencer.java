@@ -1,8 +1,7 @@
 package sandkev.differencer;
 
-import com.sun.corba.se.spi.ior.Identifiable;
-
 import java.io.Serializable;
+import java.lang.IllegalArgumentException;
 import java.util.Comparator;
 import java.util.Iterator;
 
@@ -26,33 +25,38 @@ public abstract class Differencer<T extends NaturallyKeyed<N>, N extends Seriali
     }
     public void compare(Iterator<T> expectedItor, Iterator<T> actualItor, DifferenceListener handler){
 
-        while (expectedItor.hasNext()){
+        T expected = nextOrNull(expectedItor);
+        if(expected==null){
+            throw new IllegalArgumentException("Stream of expected data is empty");
+        }
 
-            T expected = expectedItor.next();
+        T actual = nextOrNull(actualItor);
+        if(actual==null) {
+            throw new IllegalArgumentException("Stream of actual data is empty");
+        }
 
-            if( !actualItor.hasNext()){
-                handler.onMissing(expected);
-                //maybe finish here since nothing left to compare
-            }else {
+        while (actual!=null && expected!=null){
 
-                T actual = actualItor.next();
-                int keyMatch = keyComparator.compare(actual.getKey(), expected.getKey());
-                switch (keyMatch){
-                    case 0:
-                        int match = dataComparator.compare(actual, expected);
-                        if(match==0){
-                            handler.onMatch(actual, expected);
-                        }else {
-                            handler.onDifference(actual, expected);
-                        }
-                        break;
-                    default:
+            int keyMatch = keyComparator.compare(actual.getKey(), expected.getKey());
+            switch (keyMatch){
+                case 0:
+                    int match = dataComparator.compare(actual, expected);
+                    if(match==0){
+                        handler.onMatch(actual, expected);
+                    }else {
                         handler.onDifference(actual, expected);
-                }
-
-
+                    }
+                    expected = nextOrNull(expectedItor);
+                    break;
+                case 1:
+                    handler.onMissing(actual);
+                    expected = nextOrNull(expectedItor);
+                    break;
+                case -1:
+                    handler.onMissing(expected);
+                    actual = nextOrNull(actualItor);
+                    break;
             }
-
 
             /*
             1) we need to ensure data is sorted by primary key
@@ -74,6 +78,14 @@ public abstract class Differencer<T extends NaturallyKeyed<N>, N extends Seriali
 
         }
 
+
+    }
+
+    private T nextOrNull(Iterator<T> itor) {
+        if(!itor.hasNext()){
+            return null;
+        }
+        return itor.next();
     }
 
 }
