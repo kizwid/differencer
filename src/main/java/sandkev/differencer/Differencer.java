@@ -26,8 +26,8 @@ public abstract class Differencer<T extends NaturallyKeyed<N>, N extends Seriali
         this.dataComparator = dataComparator;
     }
 
-    public List<Diff> compare(Iterator<T> expectedItor, Iterator<T> actualItor){
-        final List<Diff> diffs = new ArrayList<>();
+    public List<Diff<T,N>> compare(Iterator<T> expectedItor, Iterator<T> actualItor){
+        final List<Diff<T,N>> diffs = new ArrayList<>();
         DifferenceListener handler = new DifferenceListener<T>() {
             @Override
             public void onMatch(T expected) {
@@ -69,8 +69,14 @@ public abstract class Differencer<T extends NaturallyKeyed<N>, N extends Seriali
 
             int keyMatch = keyComparator.compare(actual.getKey(), expected.getKey());
             if(keyMatch == 0){
-                //same
-                handler.onMatch(expected);
+                //same key
+                int match = dataComparator.compare(actual,expected);
+                if(match==0){
+                    handler.onMatch(expected);
+                }else {
+                    //TODO: apply approximatelyEqual if object can support tollerable difference
+                    handler.onDiff(actual, expected);
+                }
                 actual = nextOrNull(actualItor);
                 expected = nextOrNull(expectedItor);
             }else if( keyMatch > 0){
@@ -117,6 +123,25 @@ public abstract class Differencer<T extends NaturallyKeyed<N>, N extends Seriali
         private final Type type;
         private final T item;
         private final T update;
+
+        /*
+        Questions
+
+        I guess we don't really need to store both expected and actual
+        Perhaps we should just store the Key and a list of differences
+        (this could be the field that is different and the difference)
+
+        If the data matches is it ok to just note that the key matched
+
+        If the data is deleted how do we represent the differences?
+        Is it easier to store the whole deleted object, a list of the updated fields (ie all of them) or just the key
+
+        Similiarly if the data is inserted how do we represent the differences
+        Is it easier to store the whole inserted object, a list of the updated fields (ie all of them) or just the key
+
+         */
+
+
         public Diff(Type type, T item) {
             this(type, item, null);
             if(type==Type.Updated){
@@ -143,10 +168,7 @@ public abstract class Differencer<T extends NaturallyKeyed<N>, N extends Seriali
     }
 
     private T nextOrNull(Iterator<T> itor) {
-        if(!itor.hasNext()){
-            return null;
-        }
-        return itor.next();
+        return itor==null||!itor.hasNext()?null:itor.next();
     }
 
 }

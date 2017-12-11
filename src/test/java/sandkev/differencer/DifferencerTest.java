@@ -41,8 +41,8 @@ public class DifferencerTest {
 
     @Test
     public void canMatchSame(){
-        Set<Data> expected = new HashSet<>(Arrays.asList(new Data("a"),new Data("b"),new Data("c")));
-        Set<Data> actual = new HashSet<>(Arrays.asList(new Data("a"),new Data("b"),new Data("c")));
+        Set<Data> expected = new HashSet<>(Arrays.asList(new Data("a","a"),new Data("b","b"),new Data("c","c")));
+        Set<Data> actual = new HashSet<>(Arrays.asList(new Data("a","a"),new Data("b","b"),new Data("c","c")));
         List<Differencer.Diff<Data,String>> diffs = differencer.compare(expected.iterator(), actual.iterator());
         assertEquals(3, diffs.size());
         for (Differencer.Diff<Data, String> diff : diffs) {
@@ -51,17 +51,38 @@ public class DifferencerTest {
     }
 
     @Test
+    public void canFindDiff(){
+        Set<Data> expected = new HashSet<>(Arrays.asList(new Data("a","a"),new Data("b","b"),new Data("c","c")));
+        Set<Data> actual = new HashSet<>(Arrays.asList(new Data("a","a"),new Data("b","B"),new Data("c","c")));
+        List<Differencer.Diff<Data,String>> diffs = differencer.compare(expected.iterator(), actual.iterator());
+        assertEquals(3, diffs.size());
+        assertEquals(Differencer.Diff.Type.Equal, diffs.get(0).getType());
+        assertEquals(Differencer.Diff.Type.Updated, diffs.get(1).getType());
+        assertEquals(Differencer.Diff.Type.Equal, diffs.get(2).getType());
+    }
+
+    @Test
     public void canSpotValueAddedAtEnd(){
         Set<Data> expected = new HashSet<>(Arrays.asList(new Data("a"),new Data("b"),new Data("c")));
         Set<Data> actual = new HashSet<>(Arrays.asList(new Data("a"),new Data("b"),new Data("c"),new Data("d")));
-        //differencer.compare(expected.iterator(),actual.iterator(), handler);
         List<Differencer.Diff<Data,String>> diffs = differencer.compare(expected.iterator(), actual.iterator());
         assertEquals(4, diffs.size());
         assertEquals(Differencer.Diff.Type.Equal, diffs.get(0).getType());
         assertEquals(Differencer.Diff.Type.Equal, diffs.get(1).getType());
         assertEquals(Differencer.Diff.Type.Equal, diffs.get(2).getType());
         assertEquals(Differencer.Diff.Type.Inserted, diffs.get(3).getType());
+    }
 
+    @Test
+    public void canSpotValueDeletedAtEnd(){
+        Set<Data> expected = new HashSet<>(Arrays.asList(new Data("a"),new Data("b"),new Data("c"),new Data("d")));
+        Set<Data> actual = new HashSet<>(Arrays.asList(new Data("a"),new Data("b"),new Data("c")));
+        List<Differencer.Diff<Data,String>> diffs = differencer.compare(expected.iterator(), actual.iterator());
+        assertEquals(4, diffs.size());
+        assertEquals(Differencer.Diff.Type.Equal, diffs.get(0).getType());
+        assertEquals(Differencer.Diff.Type.Equal, diffs.get(1).getType());
+        assertEquals(Differencer.Diff.Type.Equal, diffs.get(2).getType());
+        assertEquals(Differencer.Diff.Type.Deleted, diffs.get(3).getType());
     }
 
     @Test
@@ -72,6 +93,18 @@ public class DifferencerTest {
         assertEquals(4, diffs.size());
         assertEquals(Differencer.Diff.Type.Equal, diffs.get(0).getType());
         assertEquals(Differencer.Diff.Type.Inserted, diffs.get(1).getType());
+        assertEquals(Differencer.Diff.Type.Equal, diffs.get(2).getType());
+        assertEquals(Differencer.Diff.Type.Equal, diffs.get(3).getType());
+    }
+
+    @Test
+    public void canSpotValueDeletedInMiddle(){
+        Set<Data> expected = new HashSet<>(Arrays.asList(new Data("a"),new Data("b"),new Data("c"),new Data("d")));
+        Set<Data> actual = new HashSet<>(Arrays.asList(new Data("a"),new Data("c"),new Data("d")));
+        List<Differencer.Diff<Data,String>> diffs = differencer.compare(expected.iterator(), actual.iterator());
+        assertEquals(4, diffs.size());
+        assertEquals(Differencer.Diff.Type.Equal, diffs.get(0).getType());
+        assertEquals(Differencer.Diff.Type.Deleted, diffs.get(1).getType());
         assertEquals(Differencer.Diff.Type.Equal, diffs.get(2).getType());
         assertEquals(Differencer.Diff.Type.Equal, diffs.get(3).getType());
     }
