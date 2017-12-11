@@ -2,8 +2,10 @@ package sandkev.differencer;
 
 import java.io.Serializable;
 import java.lang.IllegalArgumentException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 
 
 /**
@@ -23,6 +25,34 @@ public abstract class Differencer<T extends NaturallyKeyed<N>, N extends Seriali
         this.keyComparator = keyComparator;
         this.dataComparator = dataComparator;
     }
+
+    public List<Diff> compare(Iterator<T> expectedItor, Iterator<T> actualItor){
+        final List<Diff> diffs = new ArrayList<>();
+        DifferenceListener handler = new DifferenceListener<T>() {
+            @Override
+            public void onMatch(T expected) {
+                diffs.add(new Diff(Diff.Type.Equal, expected));
+            }
+
+            @Override
+            public void onDiff(T actual, T expected) {
+                diffs.add(new Diff(Diff.Type.Updated, expected, actual));
+            }
+
+            @Override
+            public void onMissing(T deleted) {
+                diffs.add(new Diff(Diff.Type.Deleted, deleted));
+            }
+
+            @Override
+            public void onAdded(T inderted) {
+                diffs.add(new Diff(Diff.Type.Inserted, inderted));
+            }
+        };
+        compare(expectedItor, actualItor, handler);
+        return diffs;
+    }
+
     public void compare(Iterator<T> expectedItor, Iterator<T> actualItor, DifferenceListener handler){
 
         T expected = nextOrNull(expectedItor);
@@ -40,7 +70,7 @@ public abstract class Differencer<T extends NaturallyKeyed<N>, N extends Seriali
             int keyMatch = keyComparator.compare(actual.getKey(), expected.getKey());
             if(keyMatch == 0){
                 //same
-                handler.onMatch(actual, expected);
+                handler.onMatch(expected);
                 actual = nextOrNull(actualItor);
                 expected = nextOrNull(expectedItor);
             }else if( keyMatch > 0){
@@ -80,6 +110,36 @@ public abstract class Differencer<T extends NaturallyKeyed<N>, N extends Seriali
         }
 
 
+    }
+
+    public static class Diff<T extends NaturallyKeyed<N>, N extends Serializable>{
+        enum Type{Equal,Inserted,Deleted,Updated}
+        private final Type type;
+        private final T item;
+        private final T update;
+        public Diff(Type type, T item) {
+            this(type, item, null);
+            if(type==Type.Updated){
+                throw new IllegalArgumentException("Missing details of updated record for key:" + item.getKey());
+            }
+        }
+        public Diff(Type type, T item, T update) {
+            this.type = type;
+            this.item = item;
+            this.update = update;
+        }
+
+        public Type getType() {
+            return type;
+        }
+
+        public T getItem() {
+            return item;
+        }
+
+        public T getUpdate() {
+            return update;
+        }
     }
 
     private T nextOrNull(Iterator<T> itor) {

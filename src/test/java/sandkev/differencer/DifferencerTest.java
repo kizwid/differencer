@@ -3,10 +3,9 @@ package sandkev.differencer;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.Serializable;
 import java.util.*;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Created by kevsa on 09/12/2017.
@@ -38,48 +37,43 @@ public class DifferencerTest {
                 super.compare(expectedItor, actualItor, handler);
             }
         };
-        handler = new DifferenceListener<Data>() {
-            @Override
-            public void onMatch(Data actual, Data expected) {
-                System.out.println("matched " + actual + "=" + expected);
-            }
-
-            @Override
-            public void onDifference(Data actual, Data expected) {
-                System.out.println("diff " + actual + "=" + expected);
-            }
-
-            @Override
-            public void onMissing(Data expected) {
-                System.out.println("missing " + expected);
-            }
-
-            @Override
-            public void onAdded(Data actual) {
-                System.out.println("added " + actual);
-            }
-        };
     }
 
     @Test
     public void canMatchSame(){
         Set<Data> expected = new HashSet<>(Arrays.asList(new Data("a"),new Data("b"),new Data("c")));
         Set<Data> actual = new HashSet<>(Arrays.asList(new Data("a"),new Data("b"),new Data("c")));
-        differencer.compare(expected.iterator(),actual.iterator(), handler);
+        List<Differencer.Diff<Data,String>> diffs = differencer.compare(expected.iterator(), actual.iterator());
+        assertEquals(3, diffs.size());
+        for (Differencer.Diff<Data, String> diff : diffs) {
+            assertEquals(Differencer.Diff.Type.Equal, diff.getType());
+        }
     }
 
     @Test
     public void canSpotValueAddedAtEnd(){
         Set<Data> expected = new HashSet<>(Arrays.asList(new Data("a"),new Data("b"),new Data("c")));
         Set<Data> actual = new HashSet<>(Arrays.asList(new Data("a"),new Data("b"),new Data("c"),new Data("d")));
-        differencer.compare(expected.iterator(),actual.iterator(), handler);
+        //differencer.compare(expected.iterator(),actual.iterator(), handler);
+        List<Differencer.Diff<Data,String>> diffs = differencer.compare(expected.iterator(), actual.iterator());
+        assertEquals(4, diffs.size());
+        assertEquals(Differencer.Diff.Type.Equal, diffs.get(0).getType());
+        assertEquals(Differencer.Diff.Type.Equal, diffs.get(1).getType());
+        assertEquals(Differencer.Diff.Type.Equal, diffs.get(2).getType());
+        assertEquals(Differencer.Diff.Type.Inserted, diffs.get(3).getType());
+
     }
 
     @Test
     public void canSpotValueAddedInMiddle(){
         Set<Data> expected = new HashSet<>(Arrays.asList(new Data("a"),new Data("c"),new Data("d")));
         Set<Data> actual = new HashSet<>(Arrays.asList(new Data("a"),new Data("b"),new Data("c"),new Data("d")));
-        differencer.compare(expected.iterator(),actual.iterator(), handler);
+        List<Differencer.Diff<Data,String>> diffs = differencer.compare(expected.iterator(), actual.iterator());
+        assertEquals(4, diffs.size());
+        assertEquals(Differencer.Diff.Type.Equal, diffs.get(0).getType());
+        assertEquals(Differencer.Diff.Type.Inserted, diffs.get(1).getType());
+        assertEquals(Differencer.Diff.Type.Equal, diffs.get(2).getType());
+        assertEquals(Differencer.Diff.Type.Equal, diffs.get(3).getType());
     }
 
     private static class Data implements NaturallyKeyed<String>{
