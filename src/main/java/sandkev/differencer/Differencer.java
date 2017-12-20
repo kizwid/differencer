@@ -19,6 +19,7 @@ import java.util.List;
  * @param <D> Data comparator
  */
 public abstract class Differencer<T extends NaturallyKeyed<N>, N extends Serializable, K extends Comparator<N>, D extends Comparator<T>> {
+    private enum Direction{Up,Down};
     private final K keyComparator;
     private final D dataComparator;
     public Differencer(K keyComparator, D dataComparator){
@@ -65,7 +66,16 @@ public abstract class Differencer<T extends NaturallyKeyed<N>, N extends Seriali
             throw new IllegalArgumentException("Stream of actual data is empty");
         }
 
+
+        T previousActual = null;
+        T previousExpected = null;
+        int direction = 0;
         while (actual!=null && expected!=null){
+
+            direction = checkDirection(expected, previousExpected, direction);
+            if(direction==0 && previousExpected!=null){
+                System.out.println("dup key: " + expected.getKey());
+            }
 
             int keyMatch = keyComparator.compare(actual.getKey(), expected.getKey());
             if(keyMatch == 0){
@@ -77,16 +87,14 @@ public abstract class Differencer<T extends NaturallyKeyed<N>, N extends Seriali
                     //TODO: apply approximatelyEqual if object can support tollerable difference
                     handler.onDiff(actual, expected);
                 }
-                actual = nextOrNull(actualItor);
-                expected = nextOrNull(expectedItor);
             }else if( keyMatch > 0){
                 //actual is bigger
                 handler.onMissing(expected);
-                expected = nextOrNull(expectedItor);
+                //expected = nextOrNull(expectedItor);
             }else {
                 //actual is smaller
                 handler.onAdded(actual);
-                actual = nextOrNull(actualItor);
+                //actual = nextOrNull(actualItor);
             }
 
             /*
@@ -99,11 +107,30 @@ public abstract class Differencer<T extends NaturallyKeyed<N>, N extends Seriali
 
             should we enforce the T objects to be compared to be aware of their own primaryKey (natural key)
             or is it better to provide the key separately eg in a Map.Entry key/value pair?
-
-
-
-
              */
+
+
+
+            if(keyMatch==0){
+                //increment both sides
+                previousActual = actual;
+                previousExpected = expected;
+                actual = nextOrNull(actualItor);
+                expected = nextOrNull(expectedItor);
+                direction = checkDirection(actual, previousActual, direction);
+                direction = checkDirection(expected, previousExpected, direction);
+            }else if(keyMatch > 0){
+                //actual is bigger
+                previousExpected = expected;
+                expected = nextOrNull(expectedItor);
+                direction = checkDirection(expected, previousExpected, direction);
+            }else {
+                //actual is smaller
+                previousActual = actual;
+                direction = checkDirection(actual, previousActual, direction);
+                actual = nextOrNull(actualItor);
+            }
+
             if(expected==null && actual!=null){
                 handler.onAdded(actual);
             }
@@ -111,11 +138,25 @@ public abstract class Differencer<T extends NaturallyKeyed<N>, N extends Seriali
                 handler.onMissing(expected);
             }
 
-
-
         }
 
 
+    }
+
+    private int checkDirection(T item, T previousItem, int currentDirection) {
+        if(item==null||previousItem==null){
+            return currentDirection;
+        }
+        int direction=keyComparator.compare(previousItem.getKey(), item.getKey());
+        if(direction==0){
+            System.out.println("duplicate found: " + item.getKey());
+        }
+        if(currentDirection != 0 && direction != 0){
+            if(Math.signum(currentDirection)!=Math.signum(direction)){
+                throw new IllegalArgumentException("keys (" + previousItem.getKey() + "->" + item.getKey() + ") going in the wrong direction expected " + Math.signum(currentDirection) + " but was " + Math.signum(direction));
+            }
+        }
+        return direction;
     }
 
     public static class Diff<T extends NaturallyKeyed<N>, N extends Serializable>{
