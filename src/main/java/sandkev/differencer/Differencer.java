@@ -74,10 +74,10 @@ public abstract class Differencer<T extends NaturallyKeyed<N>, N extends Seriali
 
             direction = checkDirection(expected, previousExpected, direction);
             if(direction==0 && previousExpected!=null){
-                System.out.println("dup key: " + expected.getKey());
+                System.out.println("dup key: " + expected.getNaturalKey());
             }
 
-            int keyMatch = keyComparator.compare(actual.getKey(), expected.getKey());
+            int keyMatch = keyComparator.compare(actual.getNaturalKey(), expected.getNaturalKey());
             if(keyMatch == 0){
                 //same key
                 int match = dataComparator.compare(actual,expected);
@@ -147,13 +147,13 @@ public abstract class Differencer<T extends NaturallyKeyed<N>, N extends Seriali
         if(item==null||previousItem==null){
             return currentDirection;
         }
-        int direction=keyComparator.compare(previousItem.getKey(), item.getKey());
+        int direction=keyComparator.compare(previousItem.getNaturalKey(), item.getNaturalKey());
         if(direction==0){
-            System.out.println("duplicate found: " + item.getKey());
+            System.out.println("duplicate found: " + item.getNaturalKey());
         }
         if(currentDirection != 0 && direction != 0){
             if(Math.signum(currentDirection)!=Math.signum(direction)){
-                throw new IllegalArgumentException("keys (" + previousItem.getKey() + "->" + item.getKey() + ") going in the wrong direction expected " + Math.signum(currentDirection) + " but was " + Math.signum(direction));
+                throw new IllegalArgumentException("keys (" + previousItem.getNaturalKey() + "->" + item.getNaturalKey() + ") going in the wrong direction expected " + Math.signum(currentDirection) + " but was " + Math.signum(direction));
             }
         }
         return direction;
@@ -186,7 +186,7 @@ public abstract class Differencer<T extends NaturallyKeyed<N>, N extends Seriali
         public Diff(Type type, T item) {
             this(type, item, null);
             if(type==Type.Updated){
-                throw new IllegalArgumentException("Missing details of updated record for key:" + item.getKey());
+                throw new IllegalArgumentException("Missing details of updated record for key:" + item.getNaturalKey());
             }
         }
         public Diff(Type type, T item, T update) {

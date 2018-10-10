@@ -158,7 +158,7 @@ public class DifferencerTest {
         }
 
         @Override
-        public String getKey() {
+        public String getNaturalKey() {
             return Key;
         }
 
