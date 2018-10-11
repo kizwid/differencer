@@ -26,19 +26,23 @@ public class SortedSetDiffAlgorithmTest {
     @Test
     public void canCompareMatchedSortedSet(){
 
-        Comparator<String> keyComparator = new Comparator<String>() {
+        Comparator<String> keyComparator = Comparator.nullsLast(new Comparator<String>() {
             @Override
             public int compare(String o1, String o2) {
+                //if(o1==null)return 1;
+                //if(o2==null)return -1;
                 return o1.compareToIgnoreCase(o2);
             }
-        };
-        Comparator<MyType> myKeyComparator = new Comparator<MyType>() {
+        });
+
+        Comparator<MyType> myKeyComparator = Comparator.nullsLast(new Comparator<MyType>() {
             @Override
             public int compare(MyType o1, MyType o2) {
                 return keyComparator.compare(o1.getNaturalKey(), o2.getNaturalKey());
             }
-        };
-        Comparator<MyType> dataComparator = new Comparator<MyType>() {
+        });
+
+        Comparator<MyType> dataComparator = Comparator.nullsLast(new Comparator<MyType>() {
             @Override
             public int compare(MyType o1, MyType o2) {
                 int n = o1.getNaturalKey().compareToIgnoreCase(o2.getNaturalKey());
@@ -48,10 +52,10 @@ public class SortedSetDiffAlgorithmTest {
                 }
                 return n;
             }
-        };
+        });
 
         TreeSet<MyType> originals = new TreeSet<>(myKeyComparator);
-//        originals.add(MyType.builder().naturalKey("a").importantValue(10).otherInterestingField("foo").ignorableField("aaa").build());
+        originals.add(MyType.builder().naturalKey("a").importantValue(10).otherInterestingField("foo").ignorableField("aaa").build());
         originals.add(MyType.builder().naturalKey("b").importantValue(20).otherInterestingField("foo").ignorableField("aaa").build());
         originals.add(MyType.builder().naturalKey("c").importantValue(30).otherInterestingField("foo").ignorableField("aaa").build());
 
@@ -71,6 +75,7 @@ public class SortedSetDiffAlgorithmTest {
 
             @Override
             public void onApproximatelyEqual(Object naturalKey, Object expected, Object acual, String context) {
+                System.out.println("appoximatelyEquals: " + expected);
 
             }
 

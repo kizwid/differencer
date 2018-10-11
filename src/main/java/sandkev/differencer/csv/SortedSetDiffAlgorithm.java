@@ -56,34 +56,37 @@ public class SortedSetDiffAlgorithm<T extends NaturallyKeyed<K>, K extends Seria
         T previousOriginal = null;
         T previousRevision = null;
         int previousDirection = 0;
-        while (originalOptional.isPresent() && revisionOptional.isPresent()){
+        while ( originalOptional.isPresent() || revisionOptional.isPresent()){ //originalOptional.isPresent() && revisionOptional.isPresent()
 
-            T orginal = originalOptional.get();
-            T revision = revisionOptional.get();
+            T orginal = originalOptional.orElse(null);
+            T revision = revisionOptional.orElse(null);
 
             int direction=0;
+            Optional<K> orginalNaturalKey = Optional.ofNullable(orginal==null?null:orginal.getNaturalKey());
             if(previousOriginal!=null){
-                direction=keyComparator.compare(previousOriginal.getNaturalKey(), orginal.getNaturalKey());
+                direction=keyComparator.compare(previousOriginal.getNaturalKey(), orginalNaturalKey.get());
                 if(direction==0){
-                    System.out.println("duplicate found: " + orginal.getNaturalKey());
+                    System.out.println("duplicate found: " + orginalNaturalKey);
                 }
             }
 
-            int keyMatch = keyComparator.compare(orginal.getNaturalKey(), revision.getNaturalKey());
+
+            Optional<K> revisionNaturalKey = Optional.ofNullable(revision==null?null:revision.getNaturalKey());
+            int keyMatch = keyComparator.compare(orginalNaturalKey.orElse(null), revisionNaturalKey.orElse(null));
             if(keyMatch == 0){
                 //same key
                 int match = dataComparator.compare(orginal, revision);
                 if(match==0){
-                    handler.onEqual(orginal.getNaturalKey(), orginal, revision, "");
+                    handler.onEqual(orginalNaturalKey, orginal, revision, "");
                 }else {
                     if(tollerence > 0){
                         if(approximatelyEquals(orginal, revision, tollerence)){
-                            handler.onApproximatelyEqual(orginal.getNaturalKey(), orginal, revision, "");
+                            handler.onApproximatelyEqual(orginalNaturalKey, orginal, revision, "");
                         }else {
-                            handler.onChanged(orginal.getNaturalKey(), orginal, revision, "");
+                            handler.onChanged(orginalNaturalKey, orginal, revision, "");
                         }
                     }else {
-                        handler.onChanged(orginal.getNaturalKey(), orginal, revision, "");
+                        handler.onChanged(orginalNaturalKey, orginal, revision, "");
                     }
                 }
                 originalOptional = next(originalIterator);
@@ -91,19 +94,29 @@ public class SortedSetDiffAlgorithm<T extends NaturallyKeyed<K>, K extends Seria
 
             }else if( keyMatch > 0){
                 //original is bigger
-                handler.onInserted(revision.getNaturalKey(), revision, "");
+                handler.onInserted(revisionNaturalKey, revision, "");
                 revisionOptional = next(revisionIterator);
             }else {
                 //revision is bigger
-                handler.onDeleted(orginal.getNaturalKey(), orginal, "");
+                handler.onDeleted(orginalNaturalKey, orginal, "");
                 originalOptional = next(originalIterator);
             }
+
+
+            //if( !(originalOptional.isPresent() && revisionOptional.isPresent())){
+            //    System.out.println("end of data streams");
+            //    break;
+           // }
 
 
 
         }
 
 
+    }
+
+    private boolean isEmpty(Optional<T> optional) {
+        return !optional.isPresent();
     }
 
     private boolean approximatelyEquals(T orginal, T revision, double tollerence) {
