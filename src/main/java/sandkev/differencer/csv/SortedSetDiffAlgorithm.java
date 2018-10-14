@@ -11,8 +11,8 @@ import java.util.SortedSet;
 /**
  * Created by kevin on 08/10/2018.
  */
-public class SortedSetDiffAlgorithm<T extends NaturallyKeyed<K>, K extends Serializable, C extends Comparator<K>, D extends Comparator<T>>
- implements DiffAlgorithm<T, K, C ,D>{
+public class SortedSetDiffAlgorithm<T extends NaturallyKeyed<K>, K extends Serializable, C extends Comparator<K>, D extends Comparator<T>, I extends SortedSet<T>>
+ implements DiffAlgorithm<T, K, C ,D, I>{
 
     double tollerence = 0;
     C keyComparator;
@@ -39,7 +39,8 @@ public class SortedSetDiffAlgorithm<T extends NaturallyKeyed<K>, K extends Seria
 */
 
 
-    public void computeDiff(Iterable<T> originalIterable, Iterable<T> revisionIterable, ComparisonResultHandler handler) {
+    public void computeDiff(I originalIterable, I revisionIterable, ComparisonResultHandler handler) {
+    //public void computeDiff(Iterable<T> originalIterable, Iterable<T> revisionIterable, ComparisonResultHandler handler) {
 
         Iterator<T> originalIterator = originalIterable.iterator();
         Optional<T> originalOptional = next(originalIterator);
@@ -55,21 +56,15 @@ public class SortedSetDiffAlgorithm<T extends NaturallyKeyed<K>, K extends Seria
 
         T previousOriginal = null;
         T previousRevision = null;
-        int previousDirection = 0;
+        int direction = 0;
         while ( originalOptional.isPresent() || revisionOptional.isPresent()){ //originalOptional.isPresent() && revisionOptional.isPresent()
 
             T orginal = originalOptional.orElse(null);
             T revision = revisionOptional.orElse(null);
 
-            int direction=0;
             Optional<K> orginalNaturalKey = Optional.ofNullable(orginal==null?null:orginal.getNaturalKey());
-            if(previousOriginal!=null){
-                direction=keyComparator.compare(previousOriginal.getNaturalKey(), orginalNaturalKey.get());
-                if(direction==0){
-                    System.out.println("duplicate found: " + orginalNaturalKey);
-                }
-            }
-
+            direction = checkDirection(orginal, previousOriginal, direction);
+            direction = checkDirection(revision, previousRevision, direction);
 
             Optional<K> revisionNaturalKey = Optional.ofNullable(revision==null?null:revision.getNaturalKey());
             int keyMatch = keyComparator.compare(orginalNaturalKey.orElse(null), revisionNaturalKey.orElse(null));
@@ -102,21 +97,27 @@ public class SortedSetDiffAlgorithm<T extends NaturallyKeyed<K>, K extends Seria
                 originalOptional = next(originalIterator);
             }
 
-
-            //if( !(originalOptional.isPresent() && revisionOptional.isPresent())){
-            //    System.out.println("end of data streams");
-            //    break;
-           // }
-
-
+            previousOriginal = orginal;
+            previousRevision = revision;
 
         }
 
-
     }
 
-    private boolean isEmpty(Optional<T> optional) {
-        return !optional.isPresent();
+    private int checkDirection(T item, T previousItem, int currentDirection) {
+        if(item==null||previousItem==null||item==previousItem){
+            return currentDirection;
+        }
+        int direction=keyComparator.compare(previousItem.getNaturalKey(), item.getNaturalKey());
+        if(direction==0){
+            System.out.println("duplicate found: " + item.getNaturalKey());
+        }
+        if(currentDirection != 0 && direction != 0){
+            if(Math.signum(currentDirection)!=Math.signum(direction)){
+                throw new IllegalArgumentException("keys (" + previousItem.getNaturalKey() + "->" + item.getNaturalKey() + ") going in the wrong direction expected " + Math.signum(currentDirection) + " but was " + Math.signum(direction));
+            }
+        }
+        return direction;
     }
 
     private boolean approximatelyEquals(T orginal, T revision, double tollerence) {

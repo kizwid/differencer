@@ -12,6 +12,6 @@ import java.util.Comparator;
  * @param <C> Key comparator
  * @param <D> Data comparator
  */
-public interface DiffAlgorithm<T extends NaturallyKeyed<K>, K extends Serializable, C extends Comparator<K>, D extends Comparator<T>> {
-    void computeDiff(Iterable<T> original, Iterable<T> revision, ComparisonResultHandler handler);
+public interface DiffAlgorithm<T extends NaturallyKeyed<K>, K extends Serializable, C extends Comparator<K>, D extends Comparator<T>, I extends Iterable<T>> {
+    void computeDiff(I original, I revision, ComparisonResultHandler handler);
 }

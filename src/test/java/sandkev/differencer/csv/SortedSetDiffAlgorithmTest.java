@@ -4,8 +4,8 @@ import junit.framework.TestCase;
 import org.junit.Test;
 import sandkev.differencer.NaturallyKeyed;
 
-import java.util.Comparator;
-import java.util.TreeSet;
+import java.util.*;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -26,21 +26,22 @@ public class SortedSetDiffAlgorithmTest {
     @Test
     public void canCompareMatchedSortedSet(){
 
-        Comparator<String> keyComparator = Comparator.nullsLast(new Comparator<String>() {
-            @Override
-            public int compare(String o1, String o2) {
-                //if(o1==null)return 1;
-                //if(o2==null)return -1;
-                return o1.compareToIgnoreCase(o2);
-            }
-        });
-
-        Comparator<MyType> myKeyComparator = Comparator.nullsLast(new Comparator<MyType>() {
-            @Override
-            public int compare(MyType o1, MyType o2) {
-                return keyComparator.compare(o1.getNaturalKey(), o2.getNaturalKey());
-            }
-        });
+        Comparator<String> keyComparator = Comparator.nullsLast(
+                (String o1, String o2)-> o1.compareToIgnoreCase(o2)
+        );
+        Comparator<MyType> myKeyComparator = Comparator.nullsLast(
+                (MyType o1, MyType o2)->keyComparator.compare(o1.getNaturalKey(), o2.getNaturalKey())
+        );
+//        Comparator<MyType> dataComparator = Comparator.nullsLast(
+//                (MyType o1, MyType o2) ->
+//                {
+//                    int n = o1.getNaturalKey().compareToIgnoreCase(o2.getNaturalKey());
+//                    if (n == 0) {
+//                        n = Double.valueOf(o1.getImportantValue().doubleValue()).compareTo(
+//                                Double.valueOf(o2.importantValue.doubleValue()));
+//                    }
+//                }
+//        );
 
         Comparator<MyType> dataComparator = Comparator.nullsLast(new Comparator<MyType>() {
             @Override
@@ -58,6 +59,7 @@ public class SortedSetDiffAlgorithmTest {
         originals.add(MyType.builder().naturalKey("a").importantValue(10).otherInterestingField("foo").ignorableField("aaa").build());
         originals.add(MyType.builder().naturalKey("b").importantValue(20).otherInterestingField("foo").ignorableField("aaa").build());
         originals.add(MyType.builder().naturalKey("c").importantValue(30).otherInterestingField("foo").ignorableField("aaa").build());
+        originals.add(MyType.builder().naturalKey("e").importantValue(30).otherInterestingField("foo").ignorableField("aaa").build());
 
         TreeSet<MyType> revisions = new TreeSet<>(myKeyComparator);
         revisions.add(MyType.builder().naturalKey("a").importantValue(10).otherInterestingField("foo").ignorableField("aaa").build());
@@ -66,7 +68,7 @@ public class SortedSetDiffAlgorithmTest {
         revisions.add(MyType.builder().naturalKey("d").importantValue(40).otherInterestingField("foo").ignorableField("aaa").build());
 
 
-        SortedSetDiffAlgorithm diffAlgorithm = new SortedSetDiffAlgorithm<MyType, String, Comparator<String>, Comparator<MyType>>(keyComparator, dataComparator);
+        SortedSetDiffAlgorithm diffAlgorithm = new SortedSetDiffAlgorithm<MyType, String, Comparator<String>, Comparator<MyType>, SortedSet<MyType>>(keyComparator, dataComparator);
         ComparisonResultHandler handler = new ComparisonResultHandler() {
             @Override
             public void onEqual(Object naturalKey, Object expected, Object actual, String context) {
