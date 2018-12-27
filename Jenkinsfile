@@ -13,6 +13,7 @@ pipeline {
     tools {
         jdk 'jdk1.8.0_111'
         maven 'maven-3.3.9'
+        gradle 'gradle-4.3.1'
     }
 
     parameters {
