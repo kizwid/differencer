@@ -30,9 +30,9 @@ pipeline {
                     def revision = getRevision()
 
                     try {
-                        bat "mvn " +
-                                "clean install -Dresume=false " +
-                                "-Darguments=\"-Dmaven.javadoc.failOnError=false\" -Drevision=${revision}"
+                        bat "gradle " +
+                                "clean build " +
+                                " -Drevision=${revision}"
                     } finally {
                         junit 'build/test-results/test/TEST-*.xml'
                         archive 'build/libs/*.jar'
