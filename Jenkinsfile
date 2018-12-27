@@ -37,7 +37,7 @@ pipeline {
                     } finally {
                         junit 'build/test-results/test/TEST-*.xml'
                         archive 'build/libs/*.jar'
-                        //jacoco exclusionPattern: '**/*Test*.class', inclusionPattern: '**/*.class', maximumBranchCoverage: '80', maximumClassCoverage: '95', maximumComplexityCoverage: '80', maximumInstructionCoverage: '5000', maximumLineCoverage: '90', maximumMethodCoverage: '95', minimumBranchCoverage: '100', minimumClassCoverage: '100', minimumComplexityCoverage: '100', minimumInstructionCoverage: '6000', minimumLineCoverage: '100', minimumMethodCoverage: '100'
+                        jacoco exclusionPattern: '**/*Test*.class', inclusionPattern: '**/*.class', maximumBranchCoverage: '80', maximumClassCoverage: '95', maximumComplexityCoverage: '80', maximumInstructionCoverage: '5000', maximumLineCoverage: '90', maximumMethodCoverage: '95', minimumBranchCoverage: '100', minimumClassCoverage: '100', minimumComplexityCoverage: '100', minimumInstructionCoverage: '6000', minimumLineCoverage: '100', minimumMethodCoverage: '100'
                     }
                 }
 
