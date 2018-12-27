@@ -1,7 +1,18 @@
 package sandkev.differencer;
 
-import static org.junit.Assert.*;
-import static sandkev.differencer.DiffMatchPatch.*;
+import junit.framework.TestCase;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import static sandkev.differencer.DiffMatchPatch.Diff;
+import static sandkev.differencer.DiffMatchPatch.LinesToCharsResult;
+import static sandkev.differencer.DiffMatchPatch.Operation;
+import static sandkev.differencer.DiffMatchPatch.Patch;
 
 /*
  * Test harness for DiffMatchPatch.java
@@ -21,21 +32,11 @@ import static sandkev.differencer.DiffMatchPatch.*;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 //package name.fraser.neil.plaintext;
-
-        import junit.framework.TestCase;
-
-        import java.util.ArrayList;
-        import java.util.Arrays;
-        import java.util.HashMap;
-        import java.util.LinkedList;
-        import java.util.List;
-        import java.util.Map;
 
 
 //public class DiffMatchPatch_test extends TestCase {
-public class DiffMatchPatchTest extends TestCase{
+public class DiffMatchPatchTest extends TestCase {
 
     private DiffMatchPatch dmp;
     private Operation DELETE = Operation.DELETE;
@@ -551,11 +552,15 @@ public class DiffMatchPatchTest extends TestCase{
         // Initialise the bitmasks for Bitap.
         Map<Character, Integer> bitmask;
         bitmask = new HashMap<Character, Integer>();
-        bitmask.put('a', 4); bitmask.put('b', 2); bitmask.put('c', 1);
+        bitmask.put('a', 4);
+        bitmask.put('b', 2);
+        bitmask.put('c', 1);
         assertEquals("match_alphabet: Unique.", bitmask, dmp.match_alphabet("abc"));
 
         bitmask = new HashMap<Character, Integer>();
-        bitmask.put('a', 37); bitmask.put('b', 18); bitmask.put('c', 8);
+        bitmask.put('a', 37);
+        bitmask.put('b', 18);
+        bitmask.put('c', 8);
         assertEquals("match_alphabet: Duplicates.", bitmask, dmp.match_alphabet("abcaba"));
     }
 

@@ -72,6 +72,7 @@ public abstract class Differencer<T extends NaturallyKeyed<N>, N extends Seriali
         int direction = 0;
         while (actual!=null && expected!=null){
 
+            direction = checkDirection(actual, previousActual, direction);
             direction = checkDirection(expected, previousExpected, direction);
             if(direction==0 && previousExpected!=null){
                 System.out.println("dup key: " + expected.getNaturalKey());
@@ -89,11 +90,19 @@ public abstract class Differencer<T extends NaturallyKeyed<N>, N extends Seriali
                 }
             }else if( keyMatch > 0){
                 //actual is bigger
-                handler.onMissing(expected);
+                if(direction<0){
+                    handler.onMissing(expected);
+                }else {
+                    handler.onAdded(actual);
+                }
                 //expected = nextOrNull(expectedItor);
             }else {
                 //actual is smaller
-                handler.onAdded(actual);
+                if(direction<0){
+                    handler.onAdded(actual);
+                }else {
+                    handler.onMissing(expected);
+                }
                 //actual = nextOrNull(actualItor);
             }
 
@@ -111,24 +120,32 @@ public abstract class Differencer<T extends NaturallyKeyed<N>, N extends Seriali
 
 
 
+            previousActual = actual;
+            previousExpected = expected;
             if(keyMatch==0){
                 //increment both sides
-                previousActual = actual;
-                previousExpected = expected;
                 actual = nextOrNull(actualItor);
                 expected = nextOrNull(expectedItor);
                 direction = checkDirection(actual, previousActual, direction);
                 direction = checkDirection(expected, previousExpected, direction);
             }else if(keyMatch > 0){
                 //actual is bigger
-                previousExpected = expected;
-                expected = nextOrNull(expectedItor);
-                direction = checkDirection(expected, previousExpected, direction);
+                if(direction<0) {
+                    expected = nextOrNull(expectedItor);
+                    direction = checkDirection(expected, previousExpected, direction);
+                }else {
+                    actual = nextOrNull(actualItor);
+                    direction = checkDirection(actual, previousActual, direction);
+                }
             }else {
                 //actual is smaller
-                previousActual = actual;
-                direction = checkDirection(actual, previousActual, direction);
-                actual = nextOrNull(actualItor);
+                if(direction<0) {
+                    actual = nextOrNull(actualItor);
+                    direction = checkDirection(actual, previousActual, direction);
+                }else {
+                    expected = nextOrNull(expectedItor);
+                    direction = checkDirection(expected, previousExpected, direction);
+                }
             }
 
             if(expected==null && actual!=null){
