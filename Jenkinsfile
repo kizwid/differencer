@@ -29,7 +29,7 @@ pipeline {
                 script {
                     def revision = getRevision()
 
-                    try (
+                    try {
                         bat "mvn " +
                                 "clean install -Dresume=false " +
                                 "-Darguments=\"-Dmaven.javadoc.failOnError=false\" -Drevision=${revision}"
