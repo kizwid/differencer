@@ -56,7 +56,7 @@ task jacocoReport(type: JacocoReport) {
 publishing {
 	publications {
 		maven(MavenPublication) {
-			artifact("build/libs/differencer-$version") {
+			artifact("build/libs/differencer-$version" + ".jar") {
 				extension 'jar'
 			}
 		}
