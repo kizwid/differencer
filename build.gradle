@@ -18,7 +18,8 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'jacoco'
-apply plugin: "org.ajoberstar.reckon"
+apply plugin: 'org.ajoberstar.reckon'
+apply plugin: 'maven-publish'
 
 group = 'sandkev'
 sourceCompatibility = 1.8
@@ -47,6 +48,27 @@ task jacocoReport(type: JacocoReport) {
 
 		html {
 			enabled true
+		}
+	}
+}
+
+//pulishing
+publishing {
+	publications {
+		maven(MavenPublication) {
+			artifact("build/libs/differencer-$version") {
+				extension 'jar'
+			}
+		}
+	}
+	repositories {
+		maven {
+			name 'nexus'
+			url "http://localhost:8082//repository/maven-releases/"
+			credentials {
+				username "admin"
+				password "admin"
+			}
 		}
 	}
 }
