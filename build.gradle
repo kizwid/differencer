@@ -7,7 +7,9 @@ buildscript {
 	}
 	dependencies {
 		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
-		classpath "ru.fix:gradle-release-plugin:1.3.6"
+		//classpath "ru.fix:gradle-release-plugin:1.3.6"
+		//classpath 'com.github.amkay:gradle-gitflow:0.2.0'
+
 	}
 }
 
@@ -15,7 +17,8 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'jacoco'
-apply plugin : "ru.fix.gradle.release"
+//apply plugin : "ru.fix.gradle.release"
+//apply plugin: 'com.github.amkay.gitflow'
 
 group = 'sandkev'
 version = '0.0.1-SNAPSHOT'
@@ -29,6 +32,7 @@ repositories {
 dependencies {
 	compile('org.springframework.boot:spring-boot-starter')
 	compile('org.projectlombok:lombok:1.16.16')
+	compile 'commons-lang:commons-lang:2.6'
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 	testCompile group: 'junit', name: 'junit', version: '4.12'
 }
