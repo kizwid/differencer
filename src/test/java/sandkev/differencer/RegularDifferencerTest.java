@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -287,7 +288,7 @@ class RegularDifferencerTest {
         var expected = make(1, "a", 0, new BigDecimal(expectedValue), "same");
         var actual = make(1, "a", 0, new BigDecimal(actualValue), "same");
 
-        var summary = DATA_COMPARATOR.compare(actual, expected);
+        var summary = DATA_COMPARATOR.compare(expected, actual);
         assertEquals(expectedResult, summary.getComparisonResult(), scenario);
     }
 
@@ -301,6 +302,80 @@ class RegularDifferencerTest {
                 Arguments.of("beyond negative tolerance", "1.0000", "0.99989", ComparisonResult.Changed),
                 Arguments.of("sign reversal", "-1.0000", "1.0000", ComparisonResult.Changed)
         );
+    }
+
+    @Test
+    void changedEventPreservesExpectedAndActualValues() {
+        var expected = make(1, "a", 0, BigDecimal.ONE, "before");
+        var actual = make(1, "a", 0, BigDecimal.ONE, "after");
+
+        var captured = new AtomicReference<DiffSummary>();
+        var handler = new ComparisonResultHandler<MyType, MyTypeKey>() {
+            @Override public void onEqual(MyTypeKey id) {
+                fail("Unexpected equal event");
+            }
+            @Override public void onApproximatelyEqual(MyTypeKey id, DiffSummary diff) {
+                fail("Unexpected approximate event");
+            }
+            @Override public void onAdded(MyTypeKey id, MyType added) {
+                fail("Unexpected added event");
+            }
+            @Override public void onDropped(MyTypeKey id, MyType dropped) {
+                fail("Unexpected dropped event");
+            }
+            @Override public void onChanged(MyTypeKey id, DiffSummary diff) {
+                assertEquals(expected.getId(), id);
+                captured.set(diff);
+            }
+        };
+
+        differencer.computeDiff(List.of(expected), List.of(actual), handler);
+
+        assertNotNull(captured.get());
+        var bioDiff = captured.get().getDiffsByType()
+                .get(ComparisonResult.Changed).get("bio").get(0);
+        assertEquals("before", bioDiff.getExpectedValue());
+        assertEquals("after", bioDiff.getActualValue());
+    }
+
+    @Test
+    void approximatelyEqualEventPreservesExpectedAndActualValues() {
+        var expected = make(1, "a", 0, new BigDecimal("1.00000"), "same");
+        var actual = make(1, "a", 0, new BigDecimal("1.00005"), "same");
+
+        var captured = new AtomicReference<DiffSummary>();
+        var handler = new ComparisonResultHandler<MyType, MyTypeKey>() {
+            @Override public void onEqual(MyTypeKey id) {
+                fail("Unexpected equal event");
+            }
+            @Override public void onApproximatelyEqual(MyTypeKey id, DiffSummary diff) {
+                captured.set(diff);
+            }
+            @Override public void onAdded(MyTypeKey id, MyType added) {
+                fail("Unexpected added event");
+            }
+            @Override public void onDropped(MyTypeKey id, MyType dropped) {
+                fail("Unexpected dropped event");
+            }
+            @Override public void onChanged(MyTypeKey id, DiffSummary diff) {
+                fail("Unexpected changed event");
+            }
+        };
+
+        differencer.computeDiff(List.of(expected), List.of(actual), handler);
+
+        assertNotNull(captured.get());
+        var valueDiff = captured.get().getDiffsByType()
+                .get(ComparisonResult.ApproximatelyEqual).get("sensitiveValue").get(0);
+        assertEquals(expected.getSensitiveValue(), valueDiff.getExpectedValue());
+        assertEquals(actual.getSensitiveValue(), valueDiff.getActualValue());
+    }
+
+    @Test
+    void defaultConstructorKeepsValidationOptIn() {
+        var defaultDifferencer = new RegularDifferencer<MyType, MyTypeKey>(
+                KEY_COMPARATOR, DATA_COMPARATOR);
+        assertFalse(defaultDifferencer.isValidationOn());
     }
 
     @Test

@@ -20,7 +20,7 @@ public interface DiffAlgorithm<T extends Identifiable<K>, K> {
      * @param actual          the “new”   stream,   sorted and without duplicates
      * @param handler         where to send your onEqual/onAdded/onDropped/onChanged events
      * @throws NullPointerException     if any argument is null
-     * @throws IllegalArgumentException if the inputs aren’t properly sorted or contain duplicates
+     * @throws IllegalArgumentException if input validation is enabled and inputs are not sorted or contain duplicates
      */
     void computeDiff(Iterable<T>                expected,
                      Iterable<T>                actual,

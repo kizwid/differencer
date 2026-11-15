@@ -12,6 +12,9 @@ public class DiffSummary {
   private final EnumMap<ComparisonResult, LinkedHashMap<String,List<Diff>>> diffsByType =
       new EnumMap<>(ComparisonResult.class);
 
+  /**
+   * Records a field difference with baseline/expected value first and observed/actual value second.
+   */
   public void addDiff(String fieldName,
                       Object expectedValue,
                       Object actualValue,

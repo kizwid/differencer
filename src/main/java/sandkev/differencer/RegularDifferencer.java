@@ -13,12 +13,13 @@ import static java.util.Objects.requireNonNull;
 
 
 /**
- * A one‑pass differ for two sorted, duplicate‑free streams of Identifiable<T>.
+ * A one-pass differ for two sorted, duplicate-free streams of Identifiable<T>.
  *
- * <p><strong>Preconditions:</strong>
+ * <p><strong>Preconditions:</strong> These are required even when runtime validation is disabled.
  * <ul>
  *   <li>Each source Iterable must be sorted strictly by the provided keyComparator.</li>
  *   <li>No two items in a source may be “equal” under that same comparator.</li>
+ *   <li>The key comparator must identify the same logical key as {@link Identifiable#getId()}.</li>
  * </ul>
  */
 public class RegularDifferencer<T extends Identifiable<K>,K>
@@ -27,8 +28,8 @@ public class RegularDifferencer<T extends Identifiable<K>,K>
     private final Comparator<? super T> keyComparator;
     private final DiffComparator<? super T> dataComparator;
     /**
-     * @param validateInputs if true, wraps each input in a ValidatingIterable that
-     *                       enforces sortedness & uniqueness at iteration time.
+     * Enables an optional single-pass check of the sorted, unique key precondition.
+     * Disabled by default for callers who already guarantee valid inputs.
      */
     private final boolean validateInputs;
 
@@ -111,7 +112,8 @@ public class RegularDifferencer<T extends Identifiable<K>,K>
     }
 
     private void handleMatch(ComparisonResultHandler<T, K> handler, T e, T a) {
-        DiffSummary d = dataComparator.compare(a, e);
+        // The comparator contract and DiffSummary both use expected, then actual.
+        DiffSummary d = requireNonNull(dataComparator.compare(e, a), "data comparator must return a DiffSummary");
         switch (d.getComparisonResult()) {
             case Equal -> handler.onEqual(e.getId());
             case ApproximatelyEqual -> handler.onApproximatelyEqual(e.getId(), d);

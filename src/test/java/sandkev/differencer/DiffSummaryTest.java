@@ -52,6 +52,19 @@ class DiffSummaryTest {
     }
 
     @Test
+    void changedAndApproximateFieldsResultInChanged() {
+        DiffSummary summary = new DiffSummary();
+        summary.addDiff("price", 1, 2, ComparisonResult.ApproximatelyEqual);
+        summary.addDiff("region", "UK", "US", ComparisonResult.Changed);
+
+        assertEquals(ComparisonResult.Changed, summary.getComparisonResult());
+        assertEquals(1, summary.getDiffsByType()
+                .get(ComparisonResult.ApproximatelyEqual).get("price").size());
+        assertEquals(1, summary.getDiffsByType()
+                .get(ComparisonResult.Changed).get("region").size());
+    }
+
+    @Test
     void getDiffsByTypeIsUnmodifiable() {
         DiffSummary summary = new DiffSummary();
         summary.addDiff("x", 0, 1, ComparisonResult.Changed);
