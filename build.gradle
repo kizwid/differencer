@@ -1,59 +1,52 @@
 plugins {
-	id 'org.springframework.boot' version '3.5.4'
-	id 'io.spring.dependency-management' version '1.1.7'
-	id 'java'
-	id 'eclipse'
-	id 'jacoco'
+    id 'java-library'
+    id 'eclipse'
+    id 'jacoco'
 }
 
 group = 'sandkev'
 version = '0.0.1-SNAPSHOT'
 
-// use Java 21 toolchain
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter'
-	testImplementation 'org.projectlombok:lombok:1.18.26'
+    compileOnly 'org.projectlombok:lombok:1.18.36'
+    annotationProcessor 'org.projectlombok:lombok:1.18.36'
 
-	// Lombok as compile-only + annotation processor
-	compileOnly    'org.projectlombok:lombok'
-	annotationProcessor 'org.projectlombok:lombok'
+    testCompileOnly 'org.projectlombok:lombok:1.18.36'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.36'
 
-	// tests
-	testCompileOnly    'org.projectlombok:lombok'
-	testAnnotationProcessor 'org.projectlombok:lombok'
-
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-test {
-	useJUnitPlatform() // ← this makes Gradle discover JUnit 5 tests
-	testLogging {
-		events "PASSED", "SKIPPED", "FAILED"
-	}
+tasks.named('test', Test) {
+    useJUnitPlatform()
+    testLogging {
+        events 'PASSED', 'SKIPPED', 'FAILED'
+    }
 }
 
 jacoco {
-	toolVersion = '0.8.13'
+    toolVersion = '0.8.13'
 }
 
-tasks.withType(Test) {
-	finalizedBy tasks.jacocoTestReport
+tasks.withType(Test).configureEach {
+    finalizedBy tasks.jacocoTestReport
 }
 
-tasks.jacocoTestReport {
-	reports {
-		xml.required.set(true)
-		html.required.set(true)
-	}
+tasks.named('jacocoTestReport') {
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
 }

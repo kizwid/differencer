@@ -11,7 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static org.springframework.test.util.AssertionErrors.*;
+import static org.junit.jupiter.api.Assertions.fail;
 import static sandkev.differencer.DiffMatchPatch.Diff;
 import static sandkev.differencer.DiffMatchPatch.LinesToCharsResult;
 import static sandkev.differencer.DiffMatchPatch.Operation;
@@ -909,6 +909,19 @@ public class DiffMatchPatchTest {
         boolArray = (boolean[]) results[1];
         resultStr = results[0] + "\t" + boolArray[0];
         assertEquals("patch_apply: Edge partial match.", "x123\ttrue", resultStr);
+    }
+
+    // Legacy test uses message-first assertions; preserve their semantics without Spring Test.
+    private static void assertEquals(String message, Object expected, Object actual) {
+        org.junit.jupiter.api.Assertions.assertEquals(expected, actual, message);
+    }
+
+    private static void assertTrue(String message, boolean condition) {
+        org.junit.jupiter.api.Assertions.assertTrue(condition, message);
+    }
+
+    private static void assertNull(String message, Object actual) {
+        org.junit.jupiter.api.Assertions.assertNull(actual, message);
     }
 
     private void assertArrayEquals(String error_msg, Object[] a, Object[] b) {
