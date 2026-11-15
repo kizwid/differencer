@@ -26,7 +26,7 @@ class RegularDifferencerTest {
         BigDecimal tolerance = new BigDecimal("0.0001");
         DiffSummary diffs = new DiffSummary();
         if (!o1.getSensitiveValue().equals(o2.getSensitiveValue())) {
-            BigDecimal absDiff = o1.getSensitiveValue().abs().subtract(o2.getSensitiveValue().abs());
+            BigDecimal absDiff = o1.getSensitiveValue().subtract(o2.getSensitiveValue()).abs();
             if( absDiff.compareTo(tolerance) <= 0) {
                 diffs.addDiff("sensitiveValue", o1.getSensitiveValue(), o2.getSensitiveValue(), ComparisonResult.ApproximatelyEqual);
             } else {
@@ -278,6 +278,73 @@ class RegularDifferencerTest {
         );
     }
 
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("numericToleranceScenarios")
+    void numericToleranceHandlesSignsAndBoundaries(String scenario,
+                                                     String expectedValue,
+                                                     String actualValue,
+                                                     ComparisonResult expectedResult) {
+        var expected = make(1, "a", 0, new BigDecimal(expectedValue), "same");
+        var actual = make(1, "a", 0, new BigDecimal(actualValue), "same");
+
+        var summary = DATA_COMPARATOR.compare(actual, expected);
+        assertEquals(expectedResult, summary.getComparisonResult(), scenario);
+    }
+
+    static Stream<Arguments> numericToleranceScenarios() {
+        return Stream.of(
+                Arguments.of("equal", "1.0000", "1.0000", ComparisonResult.Equal),
+                Arguments.of("positive within tolerance", "1.0000", "1.00009", ComparisonResult.ApproximatelyEqual),
+                Arguments.of("negative within tolerance", "-1.0000", "-1.00009", ComparisonResult.ApproximatelyEqual),
+                Arguments.of("exactly at tolerance", "1.0000", "1.0001", ComparisonResult.ApproximatelyEqual),
+                Arguments.of("beyond positive tolerance", "1.0000", "1.00011", ComparisonResult.Changed),
+                Arguments.of("beyond negative tolerance", "1.0000", "0.99989", ComparisonResult.Changed),
+                Arguments.of("sign reversal", "-1.0000", "1.0000", ComparisonResult.Changed)
+        );
+    }
+
+    @Test
+    void handlesEmptyInputsAndSingleSidedInputs() {
+        var differencer = RegularDifferencer.withValidation(KEY_COMPARATOR, DATA_COMPARATOR);
+        var empty = new ComparisonResultStats<MyType, MyTypeKey>();
+        differencer.computeDiff(List.of(), List.of(), empty);
+        assertEquals(0, empty.getEqualCount().get());
+        assertEquals(0, empty.getAddedCount().get());
+        assertEquals(0, empty.getDroppedCount().get());
+
+        var record = make(1, "a", 0, BigDecimal.ONE, "same");
+        var onlyActual = new ComparisonResultStats<MyType, MyTypeKey>();
+        differencer.computeDiff(List.of(), List.of(record), onlyActual);
+        assertEquals(Set.of(record.getId()), onlyActual.getAddedKeys());
+
+        var onlyExpected = new ComparisonResultStats<MyType, MyTypeKey>();
+        differencer.computeDiff(List.of(record), List.of(), onlyExpected);
+        assertEquals(Set.of(record.getId()), onlyExpected.getDroppedKeys());
+    }
+
+    @Test
+    void validationRejectsDuplicateKeysOnEitherSide() {
+        var duplicate = make(1, "a", 0, BigDecimal.ONE, "same");
+        var duplicates = List.of(duplicate, duplicate);
+        var differencer = RegularDifferencer.withValidation(KEY_COMPARATOR, DATA_COMPARATOR);
+        assertThrows(IllegalArgumentException.class,
+                () -> differencer.computeDiff(duplicates, List.of(), new ComparisonResultStats<>()));
+        assertThrows(IllegalArgumentException.class,
+                () -> differencer.computeDiff(List.of(), duplicates, new ComparisonResultStats<>()));
+    }
+
+    @Test
+    void validationRejectsOutOfOrderTail() {
+        var sorted = List.of(make(1, "a", 0, BigDecimal.ONE, "same"));
+        var unsortedTail = List.of(
+                make(1, "a", 0, BigDecimal.ONE, "same"),
+                make(1, "c", 0, BigDecimal.ONE, "same"),
+                make(1, "b", 0, BigDecimal.ONE, "same"));
+        var differencer = RegularDifferencer.withValidation(KEY_COMPARATOR, DATA_COMPARATOR);
+        assertThrows(IllegalArgumentException.class,
+                () -> differencer.computeDiff(sorted, unsortedTail, new ComparisonResultStats<>()));
+    }
+
     @Test
     void throwsOnUnsortedInputWhenValidateOn() {
         var unsorted = List.of(
@@ -311,7 +378,7 @@ class RegularDifferencerTest {
                 make(1,"x",0,BigDecimal.valueOf(1.0),"cool")
         );
 
-        ComparisonResultStats<String, String> stats = differencer.diffAndCollect(expected, actual);
+        ComparisonResultStats<MyType, MyTypeKey> stats = differencer.diffAndCollect(expected, actual);
 
         assertEquals(1, stats.getEqualCount().get());
         assertEquals(1, stats.getChangedCount().get());

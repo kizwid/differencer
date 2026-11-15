@@ -3,11 +3,12 @@ package sandkev.differencer;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
 import java.util.stream.IntStream;
 
-import static org.awaitility.Awaitility.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ComparisonResultStatsConcurrencyTest {
@@ -23,10 +24,12 @@ class ComparisonResultStatsConcurrencyTest {
         ExecutorService exec = Executors.newFixedThreadPool(NUM_THREADS);
         CyclicBarrier startBarrier = new CyclicBarrier(NUM_THREADS);
 
+        List<Future<?>> futures = new ArrayList<>();
+
         // Kick off all workers
         for (int t = 0; t < NUM_THREADS; t++) {
             final int threadId = t;
-            exec.submit(() -> {
+            futures.add(exec.submit(() -> {
                 try {
                     startBarrier.await();
                     for (int i = 0; i < CALLS_PER_THREAD; i++) {
@@ -37,23 +40,24 @@ class ComparisonResultStatsConcurrencyTest {
                         stats.onChanged("T" + threadId + "_CH" + i, null);
                     }
                 } catch (Exception ex) {
-                    fail("Worker thread failed: " + ex);
+                    throw new RuntimeException("Worker thread failed", ex);
                 }
-            });
+            }));
         }
 
-        // Shut down and wait (via Awaitility) for all tasks to complete
         exec.shutdown();
-        await().atMost(Duration.ofSeconds(30))
-               .until(exec::isTerminated);
+        assertTimeoutPreemptively(Duration.ofSeconds(30), () -> {
+            for (Future<?> future : futures) {
+                future.get(30, TimeUnit.SECONDS);
+            }
+            assertTrue(exec.awaitTermination(5, TimeUnit.SECONDS), "workers did not terminate");
+        });
 
-        // Now wait until all counts and sets hit the expected total
-        await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
-            assertEquals(EXPECTED_TOTAL, stats.getEqualCount().get());
-            assertEquals(EXPECTED_TOTAL, stats.getApproximatelyEqualCount().get());
-            assertEquals(EXPECTED_TOTAL, stats.getAddedCount().get());
-            assertEquals(EXPECTED_TOTAL, stats.getDroppedCount().get());
-            assertEquals(EXPECTED_TOTAL, stats.getChangedCount().get());
+        assertEquals(EXPECTED_TOTAL, stats.getEqualCount().get());
+        assertEquals(EXPECTED_TOTAL, stats.getApproximatelyEqualCount().get());
+        assertEquals(EXPECTED_TOTAL, stats.getAddedCount().get());
+        assertEquals(EXPECTED_TOTAL, stats.getDroppedCount().get());
+        assertEquals(EXPECTED_TOTAL, stats.getChangedCount().get());
 
             Set<Object> addedKeys   = stats.getAddedKeys();
             Set<Object> droppedKeys = stats.getDroppedKeys();
@@ -69,7 +73,6 @@ class ComparisonResultStatsConcurrencyTest {
                 assertTrue(droppedKeys.contains("T1_DR" + i));
                 assertTrue(changedKeys.contains("T2_CH" + i));
             });
-        });
     }
 
     @Test
