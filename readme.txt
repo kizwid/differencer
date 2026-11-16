@@ -28,3 +28,30 @@ Options
 output destination (file, console, database, socket, etc)
 format of output (csv, xml, json, text)
 style of output (patch, rowPerKey, rowPerField)
+
+
+#upgrade spring/java/junit
+
+# for this PowerShell window only:
+$Env:PATH -split ';'
+$Env:JAVA_HOME='C:\Program Files (x86)\Java\jdk1.8.0_202'
+$Env:JAVA_HOME='C:\Users\kevsa\.jdks\corretto-11.0.27'
+$Env:JAVA_HOME='C:\Users\kevsa\.jdks\corretto-21.0.7'
+$Env:PATH = $Env:JAVA_HOME + '\bin;' + $Env:PATH
+$Env:PATH -split ';'
+java -version
+
+.\gradlew clean build
+
+# for this PowerShell window only:
+$Env:ORG_GRADLE_JAVA_HOME = 'C:\Users\kevsa\Dev\tools\jdk-17.0.7'
+$Env:ORG_GRADLE_JAVA_HOME = 'C:\Users\kevsa\.jdks\corretto-21.0.7'
+# then simply:
+#.\gradlew wrapper --gradle-version 8.14.3 --distribution-type all
+./gradlew wrapper --gradle-version 9.0.0 --distribution-type all
+
+.\gradlew wrapper --gradle-version 4.8 --distribution-type all
+.\gradlew wrapper --gradle-version 8.14.3 --distribution-type all
+
+.\gradlew --stop
+Remove-Item -Recurse -Force "$env:USERPROFILE\.gradle\caches"
