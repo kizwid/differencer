@@ -442,6 +442,24 @@ class RegularDifferencerTest {
     }
 
     @Test
+    void diffAndCount_countsWithoutCollectingKeys() {
+        var expected = List.of(
+                make(1, "a", 0, BigDecimal.ONE, "old"),
+                make(1, "b", 0, BigDecimal.ONE, "same"));
+        var actual = List.of(
+                make(1, "a", 0, BigDecimal.ONE, "new"),
+                make(1, "b", 0, BigDecimal.ONE, "same"),
+                make(1, "c", 0, BigDecimal.ONE, "added"));
+
+        var counts = differencer.diffAndCount(expected, actual);
+        assertEquals(1, counts.getEqualCount().get());
+        assertEquals(1, counts.getChangedCount().get());
+        assertEquals(1, counts.getAddedCount().get());
+        assertEquals(0, counts.getDroppedCount().get());
+        assertEquals(0, counts.getApproximatelyEqualCount().get());
+    }
+
+    @Test
     void diffAndCollect_detectsChangeAndAddition() {
         var expected = List.of(
                 make(1,"b",0,BigDecimal.valueOf(1.0),"cool"),

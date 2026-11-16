@@ -1,6 +1,7 @@
 package sandkev.differencer.api;
 
 import sandkev.differencer.ComparisonResultStats;
+import sandkev.differencer.CountingResultHandler;
 
 /**
  * A functional interface that computes the diff between two
@@ -27,12 +28,22 @@ public interface DiffAlgorithm<T extends Identifiable<K>, K> {
                      ComparisonResultHandler<T,K> handler);
 
     /**
+     * Counts comparison outcomes without storing affected keys.
+     */
+    default CountingResultHandler<T, K> diffAndCount(Iterable<T> expected,
+                                                     Iterable<T> actual) {
+        CountingResultHandler<T, K> counts = new CountingResultHandler<>();
+        computeDiff(expected, actual, counts);
+        return counts;
+    }
+
+    /**
      * Convenience method: runs the diff and returns a ComparisonResultStats
      * so you don’t have to wire up a handler yourself.
      */
-    default ComparisonResultStats diffAndCollect(Iterable<T> expected,
-                                                 Iterable<T> actual) {
-        ComparisonResultStats stats = new ComparisonResultStats();
+    default ComparisonResultStats<T, K> diffAndCollect(Iterable<T> expected,
+                                                       Iterable<T> actual) {
+        ComparisonResultStats<T, K> stats = new ComparisonResultStats<>();
         computeDiff(expected, actual, stats);
         return stats;
     }
