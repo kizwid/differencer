@@ -8,7 +8,7 @@ import sandkev.differencer.DiffSummary;
  * <p>The first argument is the baseline/expected record, and the second is
  * the observed/actual record. Implementations should pass field values to
  * {@link DiffSummary#addDiff(String, Object, Object, ComparisonResult)}
- * in that same order.
+ * in that same order. The resulting {@code DiffSummary} must not be null.
  *
  * @param <T> record type
  */

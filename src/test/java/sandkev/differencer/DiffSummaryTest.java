@@ -81,6 +81,63 @@ class DiffSummaryTest {
     }
 
     @Test
+    void snapshotIsDetachedFromLaterSummaryChanges() {
+        DiffSummary summary = new DiffSummary();
+        summary.addDiff("bio", "before", "after", ComparisonResult.Changed);
+        var snapshot = summary.getDiffsByType();
+
+        summary.addDiff("bio", "second before", "second after", ComparisonResult.Changed);
+        summary.addDiff("price", 1, 2, ComparisonResult.ApproximatelyEqual);
+
+        assertEquals(1, snapshot.size());
+        assertEquals(1, snapshot.get(ComparisonResult.Changed).get("bio").size());
+        assertFalse(snapshot.containsKey(ComparisonResult.ApproximatelyEqual));
+        assertThrows(UnsupportedOperationException.class,
+                () -> snapshot.get(ComparisonResult.Changed).get("bio")
+                        .add(Diff.builder().expectedValue(0).actualValue(1).build()));
+    }
+
+    @Test
+    void diffValuesHaveNoPublicSettersAndRetainBuilderCopy() {
+        Diff original = Diff.builder().expectedValue("before").actualValue("after").build();
+        Diff editedCopy = original.toBuilder().actualValue("new").build();
+
+        assertEquals("after", original.getActualValue());
+        assertEquals("new", editedCopy.getActualValue());
+        assertEquals("before", editedCopy.getExpectedValue());
+        assertThrows(NoSuchMethodException.class,
+                () -> Diff.class.getMethod("setActualValue", Object.class));
+        assertThrows(NoSuchMethodException.class,
+                () -> Diff.class.getMethod("setExpectedValue", Object.class));
+    }
+
+    @Test
+    void rejectsInvalidFieldTypeAndNullKeys() {
+        DiffSummary summary = new DiffSummary();
+        assertThrows(NullPointerException.class,
+                () -> summary.addDiff(null, "before", "after", ComparisonResult.Changed));
+        assertThrows(NullPointerException.class,
+                () -> summary.addDiff("name", "before", "after", null));
+        assertThrows(IllegalArgumentException.class,
+                () -> summary.addDiff("name", "before", "after", ComparisonResult.Equal));
+        assertThrows(IllegalArgumentException.class,
+                () -> summary.addDiff("name", "before", "after", ComparisonResult.Added));
+        assertThrows(IllegalArgumentException.class,
+                () -> summary.addDiff("name", "before", "after", ComparisonResult.Dropped));
+        assertTrue(summary.getDiffsByType().isEmpty());
+    }
+
+    @Test
+    void allowsNullFieldValues() {
+        DiffSummary summary = new DiffSummary();
+        summary.addDiff("optional", null, "now present", ComparisonResult.Changed);
+        Diff diff = summary.getDiffsByType()
+                .get(ComparisonResult.Changed).get("optional").get(0);
+        assertNull(diff.getExpectedValue());
+        assertEquals("now present", diff.getActualValue());
+    }
+
+    @Test
     void equalsAndHashCode() {
         DiffSummary a = new DiffSummary();
         DiffSummary b = new DiffSummary();

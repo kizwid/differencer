@@ -2,11 +2,23 @@ package sandkev.differencer;
 
 import sandkev.differencer.api.ComparisonResult;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * Container for collection of differences.
+ * A mutable accumulator for field differences.
+ *
+ * <p>{@link #getDiffsByType()} returns a detached, unmodifiable snapshot.
+ * The contained {@link Diff} objects are shallowly immutable, but their
+ * expected and actual values may themselves be mutable objects.
+ *
+ * <p>Build summaries on a single thread; concurrent mutation is not supported.
  */
 public class DiffSummary {
   private final EnumMap<ComparisonResult, LinkedHashMap<String,List<Diff>>> diffsByType =
@@ -19,6 +31,11 @@ public class DiffSummary {
                       Object expectedValue,
                       Object actualValue,
                       ComparisonResult diffType) {
+    Objects.requireNonNull(fieldName, "fieldName must not be null");
+    Objects.requireNonNull(diffType, "diffType must not be null");
+    if (diffType != ComparisonResult.Changed && diffType != ComparisonResult.ApproximatelyEqual) {
+      throw new IllegalArgumentException("Field differences must be Changed or ApproximatelyEqual: " + diffType);
+    }
 
     var fieldMap = diffsByType
       .computeIfAbsent(diffType, dt -> new LinkedHashMap<>());

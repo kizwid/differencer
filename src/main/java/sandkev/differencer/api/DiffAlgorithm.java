@@ -3,6 +3,8 @@ package sandkev.differencer.api;
 import sandkev.differencer.ComparisonResultStats;
 import sandkev.differencer.CountingResultHandler;
 
+import java.util.Objects;
+
 /**
  * A functional interface that computes the diff between two
  * sorted, duplicate-free streams of Identifiable<K> items.
@@ -38,8 +40,10 @@ public interface DiffAlgorithm<T extends Identifiable<K>, K> {
     }
 
     /**
-     * Convenience method: runs the diff and returns a ComparisonResultStats
-     * so you don’t have to wire up a handler yourself.
+     * Runs the comparison and collects unique added, dropped and changed keys
+     * as well as counts. Retains {@link ComparisonResultStats} as the return
+     * type for compatibility; use {@link #diffAndCount(Iterable, Iterable)}
+     * when only constant-memory counts are required.
      */
     default ComparisonResultStats<T, K> diffAndCollect(Iterable<T> expected,
                                                        Iterable<T> actual) {

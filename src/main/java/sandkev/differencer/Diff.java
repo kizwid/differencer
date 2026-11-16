@@ -1,9 +1,16 @@
 package sandkev.differencer;
 
 import lombok.Builder;
-import lombok.Data;
+import lombok.Value;
 
-@Data
+/**
+ * A pair of field values, in expected/actual order.
+ *
+ * <p>Diff is a shallowly immutable value object. Values themselves are of type
+ * Object; callers must ensure those values are immutable (or use defensive
+ * copies) if deeper immutability is required.
+ */
+@Value
 @Builder(toBuilder = true)
 public class Diff {
     Object expectedValue;
